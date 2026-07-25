@@ -5,7 +5,13 @@ modell, kategori og repo, og start Claude Code i riktig mappe.
 
 ## Installering
 
-`.bashrc` sourcer funksjonen fra der repoet er klonet:
+```bash
+git clone https://github.com/IBICO74/protonord-sw-claudemeny.git
+cd protonord-sw-claudemeny && ./install.sh
+```
+
+`install.sh` installerer `fzf`, `whiptail` og `jq` (apt) og legger source-linja i
+`~/.bashrc`. Den er idempotent — trygg å kjøre flere ganger. Vil du gjøre det manuelt:
 
 ```bash
 [ -f /sti/til/protonord-sw-claudemeny/claude-meny.sh ] \
@@ -16,28 +22,55 @@ modell, kategori og repo, og start Claude Code i riktig mappe.
 `claude <args>` uten `-meny` går rett til vanlig Claude Code (funksjonen wrapper
 `command claude`).
 
-## Bruk — fem steg
+### Docker
 
-1. **Modus** — Normal / Auto-rediger (`--permission-mode acceptEdits`) /
+Vil du ikke installere noe på verten utover Docker:
+
+```bash
+cd docker && docker compose run --rm meny
+```
+
+Imaget inneholder verktøyene og menyen; repoene og samtalene monteres inn. Se
+[docs/DOCKER.md](docs/DOCKER.md) — særlig avsnittet om sti-paritet, som må stemme
+for at historikken skal virke.
+
+### Innstillinger
+
+| Variabel | Default | Hva den gjør |
+|---|---|---|
+| `CLAUDE_MENY_ROOT` | `/root/workspace` | Rot for repo-lista (`<rot>/<kategori>/<repo>`) |
+| `CLAUDE_MENY_SKIP` | *(tom)* | Hopp over én mappe i repo-lista, f.eks. et stort arkiv |
+| `CLAUDE_CONFIG_DIR` | `~/.claude` | Der Claude Code lagrer samtalene |
+
+## Bruk
+
+1. **Samtaler** — de 50 nyeste samtalene på tvers av hele serveren (fzf,
+   nyeste øverst). Venstre kolonne viser dato og **hele mappestien** — ingen
+   samtaletekst, så stien aldri kuttes. Panelet til høyre viser samtalen live
+   mens du flytter markøren (Outlook-stil); skriv for å søke, Ctrl-U/D blar i
+   forhåndsvisningen. Velg en samtale (`--resume <session-id>`) eller «Ny
+   samtale (velg mappe)». Mappen hentes fra `cwd`-feltet i transkriptet;
+   transkripter leses fra `$CLAUDE_CONFIG_DIR/projects/*/*.jsonl`.
+2. **Kategori + repo** — kun ved ny samtale: kategori (mappenivå under
+   workspace-roten) → repo, begge sortert etter sist jobbet (git
+   last-commit-tid). «(nåværende mappe)» hopper over repo-steget.
+3. **Modus** — Normal / Auto-rediger (`--permission-mode acceptEdits`) /
    Full agent (`--allowedTools …`) / Plan (`--permission-mode plan`).
-2. **Modell** — Standard (config-default) / Opus 4.8 / Sonnet 5 / Haiku 4.5 (`--model …`).
-3. **Kategori** — avledet av mappenivået under workspace-roten, sortert etter
-   sist jobbet.
-4. **Repo** — repo i valgt kategori, sortert etter sist jobbet (git last-commit-tid).
-   «(nåværende mappe)» i steg 3 hopper over dette steget.
-5. **Historikk** — viser chat-historikken for valgt mappe (inntil 8 samtaler,
-   nyeste øverst) med tidsstempel og tekstutsnitt (summary-linje eller første
-   brukermelding fra transkriptet). Velg en samtale (`--resume <session-id>`)
-   eller «Ny samtale». Ingen historikk → beskjed, så ny samtale.
-   Transkripter leses fra `$CLAUDE_CONFIG_DIR/projects/<mappe-sti med tegn
-   utenfor [A-Za-z0-9-] byttet til «-»>/*.jsonl`.
+4. **Modell** — Opus / Fable / Sonnet / Haiku, eller uten `--model`. Menyen sender
+   **aliaser** (`--model opus`), ikke versjonsnumre, så valget følger alltid nyeste
+   modell i familien uten at skriptet må oppdateres. Siste valg («uten `--model`»)
+   overlater modellen til CLI-ens eget standardvalg, som kan ligge en generasjon bak.
+
+Deretter `cd` til valgt mappe og Claude starter (med `--resume` hvis en
+eksisterende samtale ble valgt).
 
 ## Krav
 
-- `whiptail` (newt)
+- `fzf` (samtalelisten med forhåndsvisning)
+- `whiptail` (newt) — modus/modell/repo-stegene
 - `claude` CLI i PATH
-- `jq` (tekstutsnitt i historikk-steget)
-- git-repoer under `/root/workspace/<kategori>/<repo>` (maxdepth 2)
+- `jq` (tekstutsnitt og forhåndsvisning)
+- git-repoer under `$CLAUDE_MENY_ROOT/<kategori>/<repo>` (maxdepth 2)
 
 ## Tema
 

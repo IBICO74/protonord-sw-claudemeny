@@ -1,0 +1,12 @@
+{
+  "name": "claude-meny",
+  "build": { "dockerfile": "../docker/Dockerfile", "context": ".." },
+  "workspaceFolder": "/root/workspace",
+  "remoteEnv": { "CLAUDE_CONFIG_DIR": "/root/Claude/.claude" },
+  "mounts": [
+    "source=${localEnv:MENY_WORKSPACE:/root/workspace},target=/root/workspace,type=bind",
+    "source=${localEnv:MENY_CONFIG:/root/Claude/.claude},target=/root/Claude/.claude,type=bind",
+    "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,readonly",
+    "source=/etc/localtime,target=/etc/localtime,type=bind,readonly"
+  ]
+}

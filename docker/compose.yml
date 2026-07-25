@@ -1,0 +1,26 @@
+services:
+  meny:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      # Pin en versjon for reproduserbare bygg: --build-arg CLAUDE_VERSION=2.1.220
+      args:
+        CLAUDE_VERSION: ${CLAUDE_VERSION:-stable}
+    # fzf og whiptail krever TTY -> bruk «compose run», ikke «compose up»
+    stdin_open: true
+    tty: true
+    environment:
+      CLAUDE_CONFIG_DIR: /root/Claude/.claude
+      CLAUDE_MENY_SKIP: ${CLAUDE_MENY_SKIP:-}
+      TERM: ${TERM:-xterm-256color}
+    volumes:
+      # Venstre side (host) kan flyttes. Høyre side (container) må stå — sti-
+      # paritet er et krav, ikke en preferanse. Se docs/DOCKER.md.
+      - ${MENY_WORKSPACE:-/root/workspace}:/root/workspace
+      - ${MENY_CONFIG:-/root/Claude/.claude}:/root/Claude/.claude
+      # Git-identitet og -legitimasjon er brukerens egne, montert read-only
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      - ${HOME}/.git-credentials:/root/.git-credentials:ro
+      # Uten denne viser samtalelista UTC, ikke lokal tid
+      - /etc/localtime:/etc/localtime:ro
+    # Docker-socket monteres bevisst IKKE — det er root-ekvivalent på verten.
